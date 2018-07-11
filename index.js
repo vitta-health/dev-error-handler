@@ -1,6 +1,7 @@
 /* eslint-disable no-console, func-names */
 'use strict';
 
+var _ = require('lodash');
 var fs = require('fs');
 var stackTrace = require('stack-trace');
 var mapAsync = require('tiny-map-async');
@@ -26,7 +27,9 @@ var render = ejs.compile(errorTmpl);
 
 /* eslint-disable no-unused-vars */
 module.exports = function(err, req, res, next) {
-/* eslint-enable no-unused-vars */
+  if (_.isNil(err.stack)) err.stack = "";
+  
+  /* eslint-enable no-unused-vars */
   var stack = stackTrace.parse(err);
 
   // exclude native stuff, for ex:
@@ -34,6 +37,10 @@ module.exports = function(err, req, res, next) {
   stack = stack.filter(function(line) { return !line.native; });
 
   mapAsync(stack, function getContentInfo(line, cb) {
+    if (_.isNil(line.fileName)) {
+      cb();
+      return;
+    }
     var fileName = line.fileName;
     var isNotNodeCore = (fileName.indexOf('internal' + sep) === -1) && (fileName.indexOf(sep) !== -1);
     var isNotModule = !/node_modules/.test(fileName);
